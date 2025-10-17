@@ -7,6 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://css.gg/check-o.css" rel="stylesheet">
+    <link href="https://css.gg/close-o.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         body {
@@ -98,11 +100,7 @@
         <!-- Painel de Controle do Mediador -->
         <div id="mediator-controls" class="text-center mb-6 space-y-3">
              <div class="flex justify-center gap-4">
-                <button id="start-timer-btn" class="bg-yellow-500 text-gray-900 font-bold py-3 px-6 rounded-lg shadow-md hover:bg-yellow-400 transition duration-200 w-full max-w-xs">Iniciar Contagem</button>
-             </div>
-             <div class="grid grid-cols-2 gap-4">
-                 <button id="correct-btn" class="bg-green-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-green-400 transition duration-200">Correto</button>
-                 <button id="incorrect-btn" class="bg-red-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-red-400 transition duration-200">Incorreto</button>
+                 <button id="verify-answer-btn" class="bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-indigo-500 transition duration-200 w-full max-w-xs">Verificar Resposta</button>
              </div>
              <div class="grid grid-cols-2 gap-4">
                 <button id="pass-btn" class="bg-gray-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-gray-400 transition duration-200">Passar a Vez</button>
@@ -155,9 +153,7 @@
 
         const buzzer1Btn = document.getElementById('buzzer-team-1');
         const buzzer2Btn = document.getElementById('buzzer-team-2');
-        const startTimerBtn = document.getElementById('start-timer-btn');
-        const correctBtn = document.getElementById('correct-btn');
-        const incorrectBtn = document.getElementById('incorrect-btn');
+        const verifyAnswerBtn = document.getElementById('verify-answer-btn');
         const passBtn = document.getElementById('pass-btn');
         const revealAnswerBtn = document.getElementById('reveal-answer-btn');
         const nextQuestionBtn = document.getElementById('next-question-btn');
@@ -175,6 +171,7 @@
         let timeLeft = 30;
         let activeTeam = null;
         let hasPassed = false;
+        let selectedAnswer = null;
 
         // --- FUNÇÕES DE CONTROLE DO JOGO ---
 
@@ -191,10 +188,7 @@
         }
 
         function startTimer() {
-            if (startTimerBtn.disabled) return;
             resetTimer();
-            startTimerBtn.disabled = true;
-            startTimerBtn.classList.remove('btn-active-glow');
             timerInterval = setInterval(() => {
                 timeLeft--;
                 timerEl.textContent = timeLeft;
@@ -204,7 +198,7 @@
                 if (timeLeft <= 0) {
                     clearInterval(timerInterval);
                     timerEl.textContent = "0";
-                    incorrectBtn.click();
+                    revealAnswer(); // O tempo acabou para todos
                 }
             }, 1000);
         }
@@ -215,14 +209,12 @@
             optionsContainer.innerHTML = '';
             buzzer1Btn.disabled = false;
             buzzer2Btn.disabled = false;
-            startTimerBtn.disabled = true;
-            startTimerBtn.classList.remove('btn-active-glow');
-            correctBtn.disabled = true;
-            incorrectBtn.disabled = true;
+            verifyAnswerBtn.disabled = true;
             passBtn.disabled = true;
             revealAnswerBtn.disabled = false;
             activeTeam = null;
             hasPassed = false;
+            selectedAnswer = null;
             categoryEl.textContent = "Categoria";
             questionEl.textContent = "Clique em 'Nova Pergunta' para começar!";
         }
@@ -232,10 +224,6 @@
             activeTeam = team;
             buzzer1Btn.disabled = true;
             buzzer2Btn.disabled = true;
-            startTimerBtn.disabled = false;
-            startTimerBtn.classList.add('btn-active-glow');
-            correctBtn.disabled = false;
-            incorrectBtn.disabled = false;
             
             if (team === 1) {
                 buzzer1Btn.style.transform = 'scale(1.1)';
@@ -273,44 +261,56 @@
                 const optionButton = document.createElement('button');
                 optionButton.className = 'bg-white p-4 rounded-lg border-2 border-gray-300 text-lg font-semibold hover:bg-gray-200 transition-colors text-left';
                 optionButton.textContent = option;
+                
+                optionButton.addEventListener('click', () => {
+                    if (!activeTeam) return;
+
+                    const allButtons = optionsContainer.querySelectorAll('button');
+                    allButtons.forEach(btn => btn.classList.remove('border-blue-500', 'ring-2', 'ring-blue-500'));
+
+                    optionButton.classList.add('border-blue-500', 'ring-2', 'ring-blue-500');
+                    selectedAnswer = optionButton.textContent;
+                    verifyAnswerBtn.disabled = false;
+                });
+
                 optionsContainer.appendChild(optionButton);
             });
+
+            startTimer();
         }
         
-        function handleCorrect() {
-            if (!activeTeam) return;
+        function verifyAnswer() {
+            if (!activeTeam || !selectedAnswer) return;
 
-            const points = questions[currentQuestionIndex].bonus ? 2 : 1;
-            if (activeTeam === 1) {
-                score1 += points;
-            } else {
-                score2 += points;
-            }
-            updateScores();
-            revealAnswer();
-        }
-        
-        function handleIncorrect() {
-            if (!activeTeam) return;
-            
-            clearInterval(timerInterval);
-            startTimerBtn.disabled = true;
-            startTimerBtn.classList.remove('btn-active-glow');
+            verifyAnswerBtn.disabled = true;
+            const correctAnswer = questions[currentQuestionIndex].answer;
 
-            if (!hasPassed) {
-                passBtn.disabled = false;
-                correctBtn.disabled = true;
-                incorrectBtn.disabled = true;
-            } else {
+            if (selectedAnswer === correctAnswer) {
+                const points = questions[currentQuestionIndex].bonus ? 2 : 1;
+                if (activeTeam === 1) {
+                    score1 += points;
+                } else {
+                    score2 += points;
+                }
+                updateScores();
                 revealAnswer();
+            } else {
+                if (!hasPassed) {
+                    passBtn.disabled = false;
+                } else {
+                    revealAnswer();
+                }
             }
         }
         
         function passTurn() {
             hasPassed = true;
             passBtn.disabled = true;
-            correctBtn.disabled = false;
-            incorrectBtn.disabled = false;
+            verifyAnswerBtn.disabled = true;
+            selectedAnswer = null;
+
+            const allButtons = optionsContainer.querySelectorAll('button');
+            allButtons.forEach(btn => btn.classList.remove('border-blue-500', 'ring-2', 'ring-blue-500'));
             
             activeTeam = activeTeam === 1 ? 2 : 1;
             
@@ -318,18 +318,12 @@
             buzzer1Btn.style.boxShadow = activeTeam === 1 ? '0 0 20px 5px rgba(255, 223, 0, 0.8)' : '0 5px 15px rgba(0,0,0,0.2)';
             buzzer2Btn.style.transform = activeTeam === 2 ? 'scale(1.1)' : 'scale(1)';
             buzzer2Btn.style.boxShadow = activeTeam === 2 ? '0 0 20px 5px rgba(255, 223, 0, 0.8)' : '0 5px 15px rgba(0,0,0,0.2)';
-
-            startTimerBtn.disabled = false;
-            startTimerBtn.classList.add('btn-active-glow');
         }
 
         function revealAnswer() {
             resetTimer();
-            correctBtn.disabled = true;
-            incorrectBtn.disabled = true;
+            verifyAnswerBtn.disabled = true;
             passBtn.disabled = true;
-            startTimerBtn.disabled = true;
-            startTimerBtn.classList.remove('btn-active-glow');
 
             const optionButtons = optionsContainer.querySelectorAll('button');
             const correctAnswer = questions[currentQuestionIndex].answer;
@@ -337,7 +331,7 @@
             optionButtons.forEach(button => {
                 button.disabled = true;
                 if (button.textContent === correctAnswer) {
-                    button.classList.remove('bg-white', 'border-gray-300', 'hover:bg-gray-200');
+                    button.classList.remove('bg-white', 'border-gray-300', 'hover:bg-gray-200', 'border-blue-500', 'ring-2', 'ring-blue-500');
                     button.classList.add('bg-green-500', 'text-white', 'border-green-700');
                 } else {
                     button.classList.remove('hover:bg-gray-200');
@@ -370,9 +364,7 @@
         // --- EVENT LISTENERS ---
         buzzer1Btn.addEventListener('click', () => handleBuzzer(1));
         buzzer2Btn.addEventListener('click', () => handleBuzzer(2));
-        startTimerBtn.addEventListener('click', startTimer);
-        correctBtn.addEventListener('click', handleCorrect);
-        incorrectBtn.addEventListener('click', handleIncorrect);
+        verifyAnswerBtn.addEventListener('click', verifyAnswer);
         passBtn.addEventListener('click', passTurn);
         revealAnswerBtn.addEventListener('click', revealAnswer);
         nextQuestionBtn.addEventListener('click', nextQuestion);
