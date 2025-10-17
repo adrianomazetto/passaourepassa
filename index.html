@@ -422,6 +422,7 @@
             activeTeam = team;
             buzzer1Btn.disabled = true;
             buzzer2Btn.disabled = true;
+            passBtn.disabled = false;
             
             if (team === 1) {
                 buzzer1Btn.style.transform = 'scale(1.1)';
@@ -481,6 +482,7 @@
             if (!activeTeam || !selectedAnswer) return;
 
             verifyAnswerBtn.disabled = true;
+            passBtn.disabled = true;
             const correctAnswer = questions[currentQuestionIndex].answer;
 
             if (selectedAnswer === correctAnswer) {
@@ -493,10 +495,24 @@
                 updateScores();
                 revealAnswer();
             } else {
+                // Resposta Incorreta
+                clearInterval(timerInterval); // Para o cronômetro
+
+                // Marca a resposta selecionada como errada
+                const allButtons = optionsContainer.querySelectorAll('button');
+                allButtons.forEach(button => {
+                    if (button.textContent === selectedAnswer) {
+                        button.classList.remove('border-blue-500', 'ring-2', 'ring-blue-500');
+                        button.classList.add('bg-red-500', 'text-white', 'border-red-700');
+                    }
+                });
+
                 if (!hasPassed) {
+                    // Se foi a primeira tentativa, habilita o botão para o mediador decidir passar a vez
                     passBtn.disabled = false;
                 } else {
-                    revealAnswer();
+                    // Se foi a segunda tentativa (depois de passar), revela a resposta final
+                    setTimeout(revealAnswer, 1000); // Dá um segundo para ver o erro antes de revelar
                 }
             }
         }
@@ -508,7 +524,11 @@
             selectedAnswer = null;
 
             const allButtons = optionsContainer.querySelectorAll('button');
-            allButtons.forEach(btn => btn.classList.remove('border-blue-500', 'ring-2', 'ring-blue-500'));
+            allButtons.forEach(btn => {
+                // Reseta a aparência dos botões de resposta
+                btn.disabled = false;
+                btn.classList.remove('border-blue-500', 'ring-2', 'ring-blue-500', 'bg-red-500', 'text-white', 'border-red-700', 'opacity-50');
+            });
             
             activeTeam = activeTeam === 1 ? 2 : 1;
             
@@ -516,6 +536,8 @@
             buzzer1Btn.style.boxShadow = activeTeam === 1 ? '0 0 20px 5px rgba(255, 223, 0, 0.8)' : '0 5px 15px rgba(0,0,0,0.2)';
             buzzer2Btn.style.transform = activeTeam === 2 ? 'scale(1.1)' : 'scale(1)';
             buzzer2Btn.style.boxShadow = activeTeam === 2 ? '0 0 20px 5px rgba(255, 223, 0, 0.8)' : '0 5px 15px rgba(0,0,0,0.2)';
+            
+            startTimer(); // Reinicia o tempo para a equipe que recebeu o passe
         }
 
         function revealAnswer() {
@@ -529,7 +551,7 @@
             optionButtons.forEach(button => {
                 button.disabled = true;
                 if (button.textContent === correctAnswer) {
-                    button.classList.remove('bg-white', 'border-gray-300', 'hover:bg-gray-200', 'border-blue-500', 'ring-2', 'ring-blue-500');
+                    button.classList.remove('bg-white', 'border-gray-300', 'hover:bg-gray-200', 'border-blue-500', 'ring-2', 'ring-blue-500', 'bg-red-500', 'text-white', 'border-red-700');
                     button.classList.add('bg-green-500', 'text-white', 'border-green-700');
                 } else {
                     button.classList.remove('hover:bg-gray-200');
