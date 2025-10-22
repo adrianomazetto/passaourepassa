@@ -93,26 +93,28 @@
         <!-- Área da Pergunta -->
         <div id="question-area" class="bg-gray-100 p-6 rounded-lg shadow-inner mb-6 question-card">
             <h3 id="question-category" class="text-lg font-bold text-gray-500 mb-2">Categoria</h3>
-            <p id="question-text" class="text-2xl md:text-3xl font-bold">Clique em "Nova Pergunta" para começar!</p>
+            <p id="question-text" class="text-2xl md:text-3xl font-bold">Clique em "Iniciar" para começar o jogo!</p>
             <div id="options-container" class="mt-6 w-full grid grid-cols-1 md:grid-cols-2 gap-4"></div>
         </div>
 
         <!-- Painel de Controle do Mediador -->
         <div id="mediator-controls" class="text-center mb-6 space-y-3">
              <div class="flex justify-center gap-4">
-                 <button id="verify-answer-btn" class="bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-indigo-500 transition duration-200 w-full max-w-xs">Verificar Resposta</button>
+                 <button id="verify-answer-btn" class="bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-indigo-500 transition duration-200 w-full max-w-xs" disabled>Verificar Resposta</button>
              </div>
-             <div class="grid grid-cols-2 gap-4">
-                <button id="pass-btn" class="bg-gray-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-gray-400 transition duration-200">Passar a Vez</button>
-                <button id="reveal-answer-btn" class="bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-400 transition duration-200">Revelar Resposta</button>
+             <div class="flex justify-center gap-4">
+                <button id="reveal-answer-btn" class="bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-400 transition duration-200" disabled>Revelar Resposta</button>
              </div>
         </div>
 
-        <!-- Buzzers e Próxima Pergunta -->
+        <!-- Buzzers e Controles -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-            <button id="buzzer-team-1" class="buzzer-btn bg-blue-600 text-white font-black text-2xl py-8 rounded-lg w-full h-full">EQUIPE 1</button>
-            <button id="next-question-btn" class="bg-gray-800 text-white font-bold py-4 px-6 rounded-lg shadow-xl hover:bg-gray-700 transition duration-200 text-xl">Nova Pergunta</button>
-            <button id="buzzer-team-2" class="buzzer-btn bg-green-600 text-white font-black text-2xl py-8 rounded-lg w-full h-full">EQUIPE 2</button>
+            <button id="buzzer-team-1" class="buzzer-btn bg-blue-600 text-white font-black text-2xl py-8 rounded-lg w-full h-full" disabled>EQUIPE 1</button>
+            <div class="flex flex-col gap-2">
+                <button id="start-game-btn" class="bg-green-600 text-white font-bold py-4 px-6 rounded-lg shadow-xl hover:bg-green-500 transition duration-200 text-xl">INICIAR</button>
+                <button id="next-question-btn" class="bg-gray-800 text-white font-bold py-4 px-6 rounded-lg shadow-xl hover:bg-gray-700 transition duration-200 text-xl" disabled>Nova Pergunta</button>
+            </div>
+            <button id="buzzer-team-2" class="buzzer-btn bg-green-600 text-white font-black text-2xl py-8 rounded-lg w-full h-full" disabled>EQUIPE 2</button>
         </div>
 
     </div>
@@ -352,9 +354,9 @@
         const buzzer1Btn = document.getElementById('buzzer-team-1');
         const buzzer2Btn = document.getElementById('buzzer-team-2');
         const verifyAnswerBtn = document.getElementById('verify-answer-btn');
-        const passBtn = document.getElementById('pass-btn');
         const revealAnswerBtn = document.getElementById('reveal-answer-btn');
         const nextQuestionBtn = document.getElementById('next-question-btn');
+        const startGameBtn = document.getElementById('start-game-btn');
         
         const gameOverModal = document.getElementById('game-over-modal');
         const winnerText = document.getElementById('winner-text');
@@ -368,8 +370,9 @@
         let timerInterval;
         let timeLeft = 30;
         let activeTeam = null;
-        let hasPassed = false;
         let selectedAnswer = null;
+        let gameStarted = false;
+        let questionDisplayed = false;
 
         // --- FUNÇÕES DE CONTROLE DO JOGO ---
 
@@ -405,24 +408,26 @@
             resetTimer();
             updateScores();
             optionsContainer.innerHTML = '';
-            buzzer1Btn.disabled = false;
-            buzzer2Btn.disabled = false;
+            buzzer1Btn.disabled = !questionDisplayed;
+            buzzer2Btn.disabled = !questionDisplayed;
             verifyAnswerBtn.disabled = true;
-            passBtn.disabled = true;
-            revealAnswerBtn.disabled = false;
+            revealAnswerBtn.disabled = !questionDisplayed;
+            nextQuestionBtn.disabled = !gameStarted || activeTeam === null;
+            startGameBtn.disabled = gameStarted;
             activeTeam = null;
-            hasPassed = false;
             selectedAnswer = null;
-            categoryEl.textContent = "Categoria";
-            questionEl.textContent = "Clique em 'Nova Pergunta' para começar!";
+            if (!gameStarted) {
+                categoryEl.textContent = "Categoria";
+                questionEl.textContent = "Clique em 'Iniciar' para começar o jogo!";
+            }
         }
         
         function handleBuzzer(team) {
-            if (activeTeam) return;
+            if (activeTeam || !questionDisplayed) return;
             activeTeam = team;
             buzzer1Btn.disabled = true;
             buzzer2Btn.disabled = true;
-            passBtn.disabled = false;
+            nextQuestionBtn.disabled = false; // Habilita "Nova Pergunta" após buzzer
             
             if (team === 1) {
                 buzzer1Btn.style.transform = 'scale(1.1)';
@@ -431,6 +436,15 @@
                 buzzer2Btn.style.transform = 'scale(1.1)';
                 buzzer2Btn.style.boxShadow = '0 0 20px 5px rgba(255, 223, 0, 0.8)';
             }
+            
+            // Inicia o timer apenas quando a equipe apertar o buzzer
+            startTimer();
+        }
+
+        function startGame() {
+            gameStarted = true;
+            questionDisplayed = false;
+            nextQuestion();
         }
 
         function nextQuestion() {
@@ -444,6 +458,7 @@
             buzzer2Btn.style.transform = 'scale(1)';
             buzzer2Btn.style.boxShadow = '0 5px 15px rgba(0,0,0,0.2)';
             
+            questionDisplayed = true;
             setInitialState();
 
             const randomIndex = Math.floor(Math.random() * remainingQuestions.length);
@@ -475,14 +490,13 @@
                 optionsContainer.appendChild(optionButton);
             });
 
-            startTimer();
+            // NÃO inicia o timer aqui - só quando a equipe apertar o buzzer
         }
         
         function verifyAnswer() {
             if (!activeTeam || !selectedAnswer) return;
 
             verifyAnswerBtn.disabled = true;
-            passBtn.disabled = true;
             const correctAnswer = questions[currentQuestionIndex].answer;
 
             if (selectedAnswer === correctAnswer) {
@@ -495,7 +509,7 @@
                 updateScores();
                 revealAnswer();
             } else {
-                // Resposta Incorreta
+                // Resposta Incorreta - revela a resposta correta
                 clearInterval(timerInterval); // Para o cronômetro
 
                 // Marca a resposta selecionada como errada
@@ -507,43 +521,14 @@
                     }
                 });
 
-                if (!hasPassed) {
-                    // Se foi a primeira tentativa, habilita o botão para o mediador decidir passar a vez
-                    passBtn.disabled = false;
-                } else {
-                    // Se foi a segunda tentativa (depois de passar), revela a resposta final
-                    setTimeout(revealAnswer, 1000); // Dá um segundo para ver o erro antes de revelar
-                }
+                // Revela a resposta correta após um segundo
+                setTimeout(revealAnswer, 1000);
             }
         }
         
-        function passTurn() {
-            hasPassed = true;
-            passBtn.disabled = true;
-            verifyAnswerBtn.disabled = true;
-            selectedAnswer = null;
-
-            const allButtons = optionsContainer.querySelectorAll('button');
-            allButtons.forEach(btn => {
-                // Reseta a aparência dos botões de resposta
-                btn.disabled = false;
-                btn.classList.remove('border-blue-500', 'ring-2', 'ring-blue-500', 'bg-red-500', 'text-white', 'border-red-700', 'opacity-50');
-            });
-            
-            activeTeam = activeTeam === 1 ? 2 : 1;
-            
-            buzzer1Btn.style.transform = activeTeam === 1 ? 'scale(1.1)' : 'scale(1)';
-            buzzer1Btn.style.boxShadow = activeTeam === 1 ? '0 0 20px 5px rgba(255, 223, 0, 0.8)' : '0 5px 15px rgba(0,0,0,0.2)';
-            buzzer2Btn.style.transform = activeTeam === 2 ? 'scale(1.1)' : 'scale(1)';
-            buzzer2Btn.style.boxShadow = activeTeam === 2 ? '0 0 20px 5px rgba(255, 223, 0, 0.8)' : '0 5px 15px rgba(0,0,0,0.2)';
-            
-            startTimer(); // Reinicia o tempo para a equipe que recebeu o passe
-        }
-
         function revealAnswer() {
             resetTimer();
             verifyAnswerBtn.disabled = true;
-            passBtn.disabled = true;
 
             const optionButtons = optionsContainer.querySelectorAll('button');
             const correctAnswer = questions[currentQuestionIndex].answer;
@@ -577,17 +562,19 @@
             score1 = 0;
             score2 = 0;
             remainingQuestions = [...questions];
+            gameStarted = false;
+            questionDisplayed = false;
             gameOverModal.classList.add('hidden');
-            nextQuestion();
+            setInitialState();
         }
 
         // --- EVENT LISTENERS ---
         buzzer1Btn.addEventListener('click', () => handleBuzzer(1));
         buzzer2Btn.addEventListener('click', () => handleBuzzer(2));
         verifyAnswerBtn.addEventListener('click', verifyAnswer);
-        passBtn.addEventListener('click', passTurn);
         revealAnswerBtn.addEventListener('click', revealAnswer);
         nextQuestionBtn.addEventListener('click', nextQuestion);
+        startGameBtn.addEventListener('click', startGame);
         restartBtn.addEventListener('click', restartGame);
 
         // --- INICIALIZAÇÃO ---
