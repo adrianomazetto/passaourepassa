@@ -577,8 +577,42 @@
         startGameBtn.addEventListener('click', startGame);
         restartBtn.addEventListener('click', restartGame);
 
+        // --- SUPORTE PARA BUZZERS FÍSICOS (ESP32) ---
+        // Detecta teclas 'a' (Equipe 1) e 'd' (Equipe 2) enviadas pelo ESP32
+        document.addEventListener('keydown', function(event) {
+            // Previne ação padrão das teclas
+            if (event.key === 'a' || event.key === 'd') {
+                event.preventDefault();
+                
+                // Só aceita buzzers se o jogo estiver ativo e nenhuma equipe tiver apertado ainda
+                if (gameStarted && questionDisplayed && !activeTeam) {
+                    if (event.key === 'a') {
+                        // Tecla 'a' = Equipe 1
+                        handleBuzzer(1);
+                        console.log('🔴 BUZZER FÍSICO: Equipe 1 apertou!');
+                    } else if (event.key === 'd') {
+                        // Tecla 'd' = Equipe 2
+                        handleBuzzer(2);
+                        console.log('🟢 BUZZER FÍSICO: Equipe 2 apertou!');
+                    }
+                }
+            }
+        });
+
+        // Detecta quando a página recebe foco (útil para Serial Monitor)
+        window.addEventListener('focus', function() {
+            console.log('🎮 Jogo pronto para receber comandos dos buzzers físicos!');
+            console.log('📡 Tecla "a" = Equipe 1 | Tecla "d" = Equipe 2');
+        });
+
         // --- INICIALIZAÇÃO ---
         setInitialState();
+        
+        // Mensagem de inicialização para buzzers físicos
+        console.log('🎮 PASSA OU REPASSA - Sistema de Buzzers Físicos Ativo!');
+        console.log('📡 Aguardando comandos do ESP32...');
+        console.log('🔴 Tecla "a" = Equipe 1');
+        console.log('🟢 Tecla "d" = Equipe 2');
     </script>
 </body>
 </html>
