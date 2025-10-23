@@ -1,17 +1,14 @@
 /*
  * ESP32 Buzzers para Jogo "Passa ou Repassa"
- * 
- * Este código implementa um sistema de buzzers físicos para o jogo,
+ * * Este código implementa um sistema de buzzers físicos para o jogo,
  * detectando qual equipe apertou primeiro e enviando comandos via USB Serial.
- * 
- * Conexões:
+ * * Conexões:
  * - Botão Equipe 1: GPIO 2 (com pull-up interno)
  * - Botão Equipe 2: GPIO 4 (com pull-up interno)
  * - LED Equipe 1: GPIO 12
  * - LED Equipe 2: GPIO 14
  * - LED Status: GPIO 13 (LED interno)
- * 
- * Funcionamento:
+ * * Funcionamento:
  * - Detecta qual botão foi pressionado primeiro
  * - Envia 'a' para Equipe 1 ou 'd' para Equipe 2 via Serial
  * - Acende LED da equipe que apertou primeiro
@@ -26,9 +23,9 @@
 #define LED_STATUS 13     // LED interno (status)
 
 // Variáveis de controle
-bool gameActive = true;           // Se o jogo está ativo (aceita buzzers)
+bool gameActive = true;         // Se o jogo está ativo (aceita buzzers)
 bool buttonPressed = false;       // Se algum botão foi pressionado
-unsigned long pressTime = 0;     // Tempo do último pressionamento
+unsigned long pressTime = 0;      // Tempo do último pressionamento
 unsigned long debounceDelay = 50; // Delay para debounce (ms)
 unsigned long resetDelay = 2000;  // Delay para reset automático (ms)
 
@@ -58,9 +55,9 @@ void setup() {
   digitalWrite(LED_TEAM2, LOW);
   digitalWrite(LED_STATUS, HIGH); // LED de status aceso = pronto
   
-  // Mensagem de inicialização
-  Serial.println("ESP32 Buzzers - Passa ou Repassa");
-  Serial.println("Sistema pronto! Aguardando buzzers...");
+  // Mensagem de inicialização (Comentadas para não interferir com o site)
+  // Serial.println("ESP32 Buzzers - Passa ou Repassa");
+  // Serial.println("Sistema pronto! Aguardando buzzers...");
   
   delay(1000);
 }
@@ -139,16 +136,16 @@ void teamBuzzed(int team) {
     digitalWrite(LED_TEAM1, HIGH);
     digitalWrite(LED_TEAM2, LOW);
     Serial.print("a"); // Envia tecla 'a' para o computador
-    Serial.println();
-    Serial.println("EQUIPE 1 BUZZOU!");
+    // Serial.println(); // REMOVIDO
+    // Serial.println("EQUIPE 1 BUZZOU!"); // REMOVIDO
     
   } else if (team == 2) {
     // Equipe 2 apertou primeiro
     digitalWrite(LED_TEAM1, LOW);
     digitalWrite(LED_TEAM2, HIGH);
     Serial.print("d"); // Envia tecla 'd' para o computador
-    Serial.println();
-    Serial.println("EQUIPE 2 BUZZOU!");
+    // Serial.println(); // REMOVIDO
+    // Serial.println("EQUIPE 2 BUZZOU!"); // REMOVIDO
   }
   
   // Feedback sonoro (opcional - se tiver buzzer conectado)
@@ -165,10 +162,12 @@ void resetSystem() {
   digitalWrite(LED_TEAM2, LOW);
   digitalWrite(LED_STATUS, HIGH);
   
-  Serial.println("Sistema resetado - Pronto para próximo buzzer!");
+  // Serial.println("Sistema resetado - Pronto para próximo buzzer!"); // REMOVIDO
 }
 
 // Função para reset manual via comando serial (opcional)
+// Esta função é para debug. Para evitar qualquer conflito com o site,
+// as mensagens de resposta também foram comentadas.
 void serialEvent() {
   if (Serial.available()) {
     String command = Serial.readString();
@@ -176,24 +175,24 @@ void serialEvent() {
     
     if (command == "reset" || command == "r") {
       resetSystem();
-      Serial.println("Reset manual executado!");
+      // Serial.println("Reset manual executado!");
     }
     else if (command == "status" || command == "s") {
-      Serial.println("=== STATUS DO SISTEMA ===");
-      Serial.print("Game Active: ");
-      Serial.println(gameActive ? "SIM" : "NÃO");
-      Serial.print("Button Pressed: ");
-      Serial.println(buttonPressed ? "SIM" : "NÃO");
-      Serial.print("Team 1 Button: ");
-      Serial.println(digitalRead(BUTTON_TEAM1) == LOW ? "PRESSIONADO" : "SOLTO");
-      Serial.print("Team 2 Button: ");
-      Serial.println(digitalRead(BUTTON_TEAM2) == LOW ? "PRESSIONADO" : "SOLTO");
+      // Serial.println("=== STATUS DO SISTEMA ===");
+      // Serial.print("Game Active: ");
+      // Serial.println(gameActive ? "SIM" : "NÃO");
+      // Serial.print("Button Pressed: ");
+      // Serial.println(buttonPressed ? "SIM" : "NÃO");
+      // Serial.print("Team 1 Button: ");
+      // Serial.println(digitalRead(BUTTON_TEAM1) == LOW ? "PRESSIONADO" : "SOLTO");
+      // Serial.print("Team 2 Button: ");
+      // Serial.println(digitalRead(BUTTON_TEAM2) == LOW ? "PRESSIONADO" : "SOLTO");
     }
     else if (command == "help" || command == "h") {
-      Serial.println("=== COMANDOS DISPONÍVEIS ===");
-      Serial.println("reset ou r - Reset manual do sistema");
-      Serial.println("status ou s - Mostra status atual");
-      Serial.println("help ou h - Mostra esta ajuda");
+      // Serial.println("=== COMANDOS DISPONÍVEIS ===");
+      // Serial.println("reset ou r - Reset manual do sistema");
+      // Serial.println("status ou s - Mostra status atual");
+      // Serial.println("help ou h - Mostra esta ajuda");
     }
   }
 }
