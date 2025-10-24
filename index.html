@@ -60,6 +60,63 @@
                 box-shadow: 0 0 10px #ffdf00, 0 0 20px #ffdf00, 0 0 30px #ffc300;
             }
         }
+        
+        /* Animação de borda gradiente laranja */
+        @keyframes orange-gradient-border {
+            0% {
+                border-image: linear-gradient(0deg, #fafafa, #ff8800, #ffaa00, #ff6600) 1;
+            }
+            25% {
+                border-image: linear-gradient(90deg, #ffffff, #ff8800, #ffaa00, #ff6600) 1;
+            }
+            50% {
+                border-image: linear-gradient(180deg, #ffffff, #f3b977, #faa702, #ff5f02) 1;
+            }
+            75% {
+                border-image: linear-gradient(270deg, #ffffff, #f3b977, #faa702, #ff5f02) 1;
+            }
+            100% {
+                border-image: linear-gradient(360deg, #ffffff, #f3b977, #faa702, #ff5f02) 1;
+            }
+        }
+        
+        /* Animações de alternância de cores dos botões com efeito de escala */
+        @keyframes blue-color-pulse {
+            0%, 100% {
+                background-color: #2563eb;
+                transform: scale(1.0);
+            }
+            50% {
+                background-color: #2563eb;
+                transform: scale(1.15);
+            }
+        }
+        
+        @keyframes green-color-pulse {
+            0%, 100% {
+                background-color: #16a34a;
+                transform: scale(1.0);
+            }
+            50% {
+                background-color: #16a34a;
+                transform: scale(1.15);
+            }
+        }
+        
+        /* Classes para buzzers ativos */
+        .buzzer-active-blue {
+            animation: blue-color-pulse 1.5s infinite ease-in-out;
+            z-index: 10;
+            position: relative;
+            border-radius: 15px;
+        }
+        
+        .buzzer-active-green {
+            animation: green-color-pulse 1.5s infinite ease-in-out;
+            z-index: 10;
+            position: relative;
+            border-radius: 15px;
+        }
     </style>
 </head>
 <body class="text-gray-800 p-4 sm:p-6 md:p-8">
@@ -68,8 +125,19 @@
         
         <!-- Cabeçalho -->
         <header class="text-center border-b-4 border-blue-600 pb-4 mb-6">
-            <h1 class="text-4xl md:text-5xl font-black text-blue-800">QUIZ</h1>
-            <p class="text-xl md:text-2xl font-bold text-gray-700">Brasil de Norte a Sul</p>
+            <div class="flex justify-between items-center mb-4">
+                <div class="flex-1"></div>
+                <div class="flex-1 text-center">
+                    <h1 class="text-4xl md:text-5xl font-black text-blue-800">QUIZ</h1>
+                    <p class="text-xl md:text-2xl font-bold text-gray-700">Brasil de Norte a Sul</p>
+                </div>
+                <div class="flex-1 flex justify-end">
+                    <button id="esp32-config-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-200 flex items-center gap-2">
+                        <span id="esp32-status-icon" class="w-3 h-3 bg-red-500 rounded-full"></span>
+                        <span>Configurar ESP32</span>
+                    </button>
+                </div>
+            </div>
         </header>
 
         <!-- Placar e Timer -->
@@ -125,6 +193,58 @@
             <h2 class="text-4xl font-black mb-4">Fim de Jogo!</h2>
             <p id="winner-text" class="text-2xl mb-6">O resultado é...</p>
             <button id="restart-btn" class="bg-yellow-500 text-gray-900 font-bold py-3 px-8 rounded-lg text-lg hover:bg-yellow-400">Jogar Novamente</button>
+        </div>
+    </div>
+
+    <!-- Modal de Configuração ESP32 -->
+    <div id="esp32-config-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden z-50">
+        <div class="bg-white p-8 rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Configuração ESP32</h2>
+                <button id="close-esp32-modal" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+            </div>
+            
+            <div class="space-y-4">
+                <!-- Status da Conexão -->
+                <div class="flex items-center justify-between p-3 bg-gray-100 rounded-lg">
+                    <span class="font-medium">Status:</span>
+                    <div class="flex items-center gap-2">
+                        <span id="connection-status-icon" class="w-3 h-3 bg-red-500 rounded-full"></span>
+                        <span id="connection-status-text" class="font-medium text-red-600">Desconectado</span>
+                    </div>
+                </div>
+
+                <!-- Informações da Porta -->
+                <div id="port-info" class="p-3 bg-blue-50 rounded-lg hidden">
+                    <p class="text-sm text-blue-800"><strong>Porta:</strong> <span id="current-port">-</span></p>
+                    <p class="text-sm text-blue-800"><strong>Baud Rate:</strong> 115200</p>
+                </div>
+
+                <!-- Botões de Ação -->
+                <div class="space-y-3">
+                    <button id="connect-esp32-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200">
+                        Conectar ESP32
+                    </button>
+                    <button id="disconnect-esp32-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 hidden">
+                        Desconectar ESP32
+                    </button>
+                </div>
+
+                <!-- Log de Comunicação -->
+                <div class="mt-6">
+                    <h3 class="text-sm font-medium text-gray-700 mb-2">Log de Comunicação:</h3>
+                    <div id="serial-log" class="bg-gray-900 text-green-400 p-3 rounded-lg h-32 overflow-y-auto text-xs font-mono">
+                        <div class="text-gray-500">Aguardando conexão...</div>
+                    </div>
+                </div>
+
+                <!-- Informações de Compatibilidade -->
+                <div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p class="text-xs text-yellow-800">
+                        <strong>Nota:</strong> Esta funcionalidade requer um navegador compatível com Web Serial API (Chrome, Edge, Opera).
+                    </p>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -416,6 +536,11 @@
             startGameBtn.disabled = gameStarted;
             activeTeam = null;
             selectedAnswer = null;
+            
+            // Remove animações dos buzzers
+            buzzer1Btn.classList.remove('buzzer-active-blue');
+            buzzer2Btn.classList.remove('buzzer-active-green');
+            
             if (!gameStarted) {
                 categoryEl.textContent = "Categoria";
                 questionEl.textContent = "Clique em 'Iniciar' para começar o jogo!";
@@ -429,12 +554,16 @@
             buzzer2Btn.disabled = true;
             nextQuestionBtn.disabled = false; // Habilita "Nova Pergunta" após buzzer
             
+            // Remove animações anteriores
+            buzzer1Btn.classList.remove('buzzer-active-blue');
+            buzzer2Btn.classList.remove('buzzer-active-green');
+            
             if (team === 1) {
-                buzzer1Btn.style.transform = 'scale(1.1)';
-                buzzer1Btn.style.boxShadow = '0 0 20px 5px rgba(255, 223, 0, 0.8)';
+                // Adiciona efeito visual piscante para equipe AZUL
+                buzzer1Btn.classList.add('buzzer-active-blue');
             } else {
-                buzzer2Btn.style.transform = 'scale(1.1)';
-                buzzer2Btn.style.boxShadow = '0 0 20px 5px rgba(255, 223, 0, 0.8)';
+                // Adiciona efeito visual piscante para equipe VERDE
+                buzzer2Btn.classList.add('buzzer-active-green');
             }
             
             // Inicia o timer apenas quando a equipe apertar o buzzer
@@ -453,11 +582,6 @@
                 return;
             }
 
-            buzzer1Btn.style.transform = 'scale(1)';
-            buzzer1Btn.style.boxShadow = '0 5px 15px rgba(0,0,0,0.2)';
-            buzzer2Btn.style.transform = 'scale(1)';
-            buzzer2Btn.style.boxShadow = '0 5px 15px rgba(0,0,0,0.2)';
-            
             questionDisplayed = true;
             setInitialState();
 
@@ -516,8 +640,10 @@
                 const allButtons = optionsContainer.querySelectorAll('button');
                 allButtons.forEach(button => {
                     if (button.textContent === selectedAnswer) {
-                        button.classList.remove('border-blue-500', 'ring-2', 'ring-blue-500');
-                        button.classList.add('bg-red-500', 'text-white', 'border-red-700');
+                        button.classList.remove('border-blue-500', 'ring-2', 'ring-blue-500', 'bg-white', 'border-gray-300', 'hover:bg-gray-200');
+                        button.classList.add('bg-red-600', 'text-white', 'border-red-700');
+                        button.style.backgroundColor = '#dc2626'; // Força o fundo vermelho
+                        button.style.color = 'white'; // Força o texto branco
                     }
                 });
 
@@ -536,11 +662,15 @@
             optionButtons.forEach(button => {
                 button.disabled = true;
                 if (button.textContent === correctAnswer) {
-                    button.classList.remove('bg-white', 'border-gray-300', 'hover:bg-gray-200', 'border-blue-500', 'ring-2', 'ring-blue-500', 'bg-red-500', 'text-white', 'border-red-700');
+                    button.classList.remove('bg-white', 'border-gray-300', 'hover:bg-gray-200', 'border-blue-500', 'ring-2', 'ring-blue-500', 'bg-red-500', 'bg-red-600', 'text-white', 'border-red-700');
                     button.classList.add('bg-green-500', 'text-white', 'border-green-700');
+                    button.style.backgroundColor = ''; // Remove estilo inline
+                    button.style.color = ''; // Remove estilo inline
                 } else {
                     button.classList.remove('hover:bg-gray-200');
                     button.classList.add('opacity-50');
+                    button.style.backgroundColor = ''; // Remove estilo inline
+                    button.style.color = ''; // Remove estilo inline
                 }
             });
         }
@@ -605,14 +735,198 @@
             console.log('📡 Tecla "a" = Equipe 1 | Tecla "d" = Equipe 2');
         });
 
+        // --- WEB SERIAL API PARA ESP32 ---
+        let serialPort = null;
+        let reader = null;
+        let isConnected = false;
+
+        // Elementos do modal ESP32
+        const esp32ConfigBtn = document.getElementById('esp32-config-btn');
+        const esp32ConfigModal = document.getElementById('esp32-config-modal');
+        const closeEsp32Modal = document.getElementById('close-esp32-modal');
+        const connectEsp32Btn = document.getElementById('connect-esp32-btn');
+        const disconnectEsp32Btn = document.getElementById('disconnect-esp32-btn');
+        const connectionStatusIcon = document.getElementById('connection-status-icon');
+        const connectionStatusText = document.getElementById('connection-status-text');
+        const esp32StatusIcon = document.getElementById('esp32-status-icon');
+        const portInfo = document.getElementById('port-info');
+        const currentPort = document.getElementById('current-port');
+        const serialLog = document.getElementById('serial-log');
+
+        // Função para adicionar log
+        function addSerialLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = type === 'error' ? 'text-red-400' : type === 'success' ? 'text-green-400' : 'text-blue-400';
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            serialLog.appendChild(logEntry);
+            serialLog.scrollTop = serialLog.scrollHeight;
+        }
+
+        // Função para atualizar status da conexão
+        function updateConnectionStatus(connected, portName = '') {
+            isConnected = connected;
+            
+            if (connected) {
+                connectionStatusIcon.className = 'w-3 h-3 bg-green-500 rounded-full';
+                connectionStatusText.textContent = 'Conectado';
+                connectionStatusText.className = 'font-medium text-green-600';
+                esp32StatusIcon.className = 'w-3 h-3 bg-green-500 rounded-full';
+                
+                connectEsp32Btn.classList.add('hidden');
+                disconnectEsp32Btn.classList.remove('hidden');
+                portInfo.classList.remove('hidden');
+                currentPort.textContent = portName;
+            } else {
+                connectionStatusIcon.className = 'w-3 h-3 bg-red-500 rounded-full';
+                connectionStatusText.textContent = 'Desconectado';
+                connectionStatusText.className = 'font-medium text-red-600';
+                esp32StatusIcon.className = 'w-3 h-3 bg-red-500 rounded-full';
+                
+                connectEsp32Btn.classList.remove('hidden');
+                disconnectEsp32Btn.classList.add('hidden');
+                portInfo.classList.add('hidden');
+                currentPort.textContent = '-';
+            }
+        }
+
+        // Função para conectar com ESP32
+        async function connectToESP32() {
+            try {
+                // Verifica se Web Serial API está disponível
+                if (!('serial' in navigator)) {
+                    throw new Error('Web Serial API não suportada neste navegador');
+                }
+
+                addSerialLog('Solicitando porta serial...', 'info');
+                
+                // Solicita porta serial
+                serialPort = await navigator.serial.requestPort();
+                
+                // Abre a conexão
+                await serialPort.open({ 
+                    baudRate: 115200,
+                    dataBits: 8,
+                    stopBits: 1,
+                    parity: 'none'
+                });
+
+                const portInfo = serialPort.getInfo();
+                const portName = `USB Serial (VID: ${portInfo.usbVendorId?.toString(16) || 'N/A'})`;
+                
+                addSerialLog(`Conectado ao ESP32 em ${portName}`, 'success');
+                updateConnectionStatus(true, portName);
+
+                // Inicia leitura dos dados
+                startReading();
+
+            } catch (error) {
+                addSerialLog(`Erro ao conectar: ${error.message}`, 'error');
+                console.error('Erro na conexão ESP32:', error);
+            }
+        }
+
+        // Função para desconectar do ESP32
+        async function disconnectFromESP32() {
+            try {
+                if (reader) {
+                    await reader.cancel();
+                    reader = null;
+                }
+                
+                if (serialPort) {
+                    await serialPort.close();
+                    serialPort = null;
+                }
+
+                addSerialLog('Desconectado do ESP32', 'info');
+                updateConnectionStatus(false);
+
+            } catch (error) {
+                addSerialLog(`Erro ao desconectar: ${error.message}`, 'error');
+                console.error('Erro na desconexão ESP32:', error);
+            }
+        }
+
+        // Função para ler dados do ESP32
+        async function startReading() {
+            try {
+                const textDecoder = new TextDecoderStream();
+                const readableStreamClosed = serialPort.readable.pipeTo(textDecoder.writable);
+                reader = textDecoder.readable.getReader();
+
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+
+                    // Processa cada caractere recebido
+                    for (const char of value) {
+                        if (char === 'a' || char === 'd') {
+                            // Só aceita buzzers se o jogo estiver ativo e nenhuma equipe tiver apertado ainda
+                            if (gameStarted && questionDisplayed && !activeTeam) {
+                                if (char === 'a') {
+                                    handleBuzzer(1);
+                                    addSerialLog('🔴 BUZZER ESP32: Equipe AZUL apertou!', 'success');
+                                } else if (char === 'd') {
+                                    handleBuzzer(2);
+                                    addSerialLog('🟢 BUZZER ESP32: Equipe VERDE apertou!', 'success');
+                                }
+                            } else {
+                                addSerialLog(`Buzzer ignorado: jogo não ativo (${char})`, 'info');
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    addSerialLog(`Erro na leitura: ${error.message}`, 'error');
+                    console.error('Erro na leitura ESP32:', error);
+                }
+            }
+        }
+
+        // Event listeners para o modal ESP32
+        esp32ConfigBtn.addEventListener('click', () => {
+            esp32ConfigModal.classList.remove('hidden');
+        });
+
+        closeEsp32Modal.addEventListener('click', () => {
+            esp32ConfigModal.classList.add('hidden');
+        });
+
+        connectEsp32Btn.addEventListener('click', connectToESP32);
+        disconnectEsp32Btn.addEventListener('click', disconnectFromESP32);
+
+        // Fechar modal clicando fora
+        esp32ConfigModal.addEventListener('click', (e) => {
+            if (e.target === esp32ConfigModal) {
+                esp32ConfigModal.classList.add('hidden');
+            }
+        });
+
+        // Detectar desconexão automática
+        if ('serial' in navigator) {
+            navigator.serial.addEventListener('disconnect', (event) => {
+                if (event.target === serialPort) {
+                    addSerialLog('ESP32 desconectado automaticamente', 'error');
+                    updateConnectionStatus(false);
+                    serialPort = null;
+                    reader = null;
+                }
+            });
+        }
+
         // --- INICIALIZAÇÃO ---
         setInitialState();
         
-        // Mensagem de inicialização para buzzers físicos
-        console.log('🎮 PASSA OU REPASSA - Sistema de Buzzers Físicos Ativo!');
+        // Mensagem de inicialização
+        console.log('🎮 QUIZ - Sistema de Buzzers Físicos Ativo!');
         console.log('📡 Aguardando comandos do ESP32...');
-        console.log('🔴 Tecla "a" = Equipe 1');
-        console.log('🟢 Tecla "d" = Equipe 2');
+        console.log('🔴 Tecla "a" = Equipe AZUL');
+        console.log('🟢 Tecla "d" = Equipe VERDE');
+        
+        // Inicializar log
+        addSerialLog('Sistema iniciado. Clique em "Conectar ESP32" para começar.', 'info');
     </script>
 </body>
 </html>
